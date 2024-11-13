@@ -1,8 +1,9 @@
-package internal
+package database
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 )
@@ -17,13 +18,17 @@ type Database struct {
 
 // Loads data from a file in memory or starts fresh
 func (db *Database) load() {
-	file, err := os.Open(db.file)
+	file, err := os.OpenFile(db.file, os.O_RDWR|os.O_CREATE, 0666)
 
 	if err != nil {
 		fmt.Println("No existing file found, starting fresh...")
 	}
 
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Error closing file: %v", err)
+		}
+	}()
 
 	var data map[string]Document
 	err = json.NewDecoder(file).Decode(&data)
